@@ -20,13 +20,13 @@ class Harpoon extends Component
         );
 
         if ($validator->fails()) {
-            $this->addError('componentName', $validator->errors()->first('componentName'));
+            $this->dispatch('harpoon-error', message: $validator->errors()->first('componentName'));
 
             return;
         }
 
         if ($this->sourceModule === '') {
-            $this->addError('componentName', 'No source module detected for this page.');
+            $this->dispatch('harpoon-error', message: 'No source module detected for this page.');
 
             return;
         }
@@ -37,7 +37,7 @@ class Harpoon extends Component
         $modulePath = base_path('Modules/'.$this->sourceModule);
 
         if (! is_dir($modulePath)) {
-            $this->addError('componentName', "Module directory not found: Modules/{$this->sourceModule}");
+            $this->dispatch('harpoon-error', message: "Module directory not found: Modules/{$this->sourceModule}");
 
             return;
         }

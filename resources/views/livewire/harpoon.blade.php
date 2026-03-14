@@ -255,6 +255,12 @@
 
                     setTimeout(() => { this.successMessage = ''; }, 5000);
                 });
+
+                this.$wire.$on('harpoon-error', (data) => {
+                    const info = data[0] ?? data;
+                    this.error = info.message;
+                    this.loading = false;
+                });
             },
 
             async submit() {
