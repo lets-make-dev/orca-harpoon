@@ -1,0 +1,34 @@
+{
+    "name": "make-dev/orca-harpoon",
+    "description": "Extract HTML elements into Livewire components with a single click. OrcaHarpoon lets you visually inspect any element on your page and instantly scaffold a new Livewire component from it.",
+    "keywords": ["laravel", "livewire", "developer-tools", "component-extraction"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michael Craig",
+            "email": "m@ke.dev"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "livewire/livewire": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MakeDev\\OrcaHarpoon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MakeDev\\OrcaHarpoon\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MakeDev\\OrcaHarpoon\\Providers\\OrcaHarpoonServiceProvider"
+            ]
+        }
+    }
+}
