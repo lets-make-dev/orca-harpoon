@@ -1,5 +1,5 @@
 <p align="center">
-  <strong>OrcaHarpoon</strong>
+  <img src="art/logo.png" width="400" alt="Orca Logo">
 </p>
 
 <p align="center">
