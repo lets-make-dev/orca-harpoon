@@ -11,8 +11,10 @@
         class="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 shadow-lg transition hover:text-white"
         title="OrcaHarpoon — Extract element to component"
     >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 11l4-7 4 7M7 11h8M7 11l-1 4h10l-1-4M12 4v0M12 18v3" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20L21 3" />
+            <path d="M15 5L21 3L19 9" />
+            <path d="M13 11L10 10M13 11L14 14" />
         </svg>
     </button>
 
@@ -23,8 +25,10 @@
         class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg animate-pulse"
         title="Click an element to capture it (Esc to cancel)"
     >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 11l4-7 4 7M7 11h8M7 11l-1 4h10l-1-4M12 4v0M12 18v3" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20L21 3" />
+            <path d="M15 5L21 3L19 9" />
+            <path d="M13 11L10 10M13 11L14 14" />
         </svg>
     </button>
 
