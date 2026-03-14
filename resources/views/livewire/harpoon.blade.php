@@ -152,6 +152,25 @@
 
             _onMouseOver: null,
             _onClick: null,
+            _onKeyDown: null,
+            _targetEl: null,
+
+            _highlightElement(el) {
+                if (!el || el.closest('[data-orca-harpoon]')) {
+                    return;
+                }
+                this._targetEl = el;
+                const rect = el.getBoundingClientRect();
+                this.overlayRect = {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height,
+                };
+                const tag = el.tagName.toLowerCase();
+                const classes = [...el.classList].slice(0, 3).join('.');
+                this.overlayLabel = classes ? `${tag}.${classes}` : tag;
+            },
 
             startInspecting() {
                 this.mode = 'inspecting';
@@ -161,16 +180,7 @@
                     if (e.target.closest('[data-orca-harpoon]')) {
                         return;
                     }
-                    const rect = e.target.getBoundingClientRect();
-                    this.overlayRect = {
-                        top: rect.top,
-                        left: rect.left,
-                        width: rect.width,
-                        height: rect.height,
-                    };
-                    const tag = e.target.tagName.toLowerCase();
-                    const classes = [...e.target.classList].slice(0, 3).join('.');
-                    this.overlayLabel = classes ? `${tag}.${classes}` : tag;
+                    this._highlightElement(e.target);
                 };
 
                 this._onClick = (e) => {
@@ -180,8 +190,9 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    this.capturedHtml = e.target.outerHTML;
-                    this.capturedXPath = this.getXPath(e.target);
+                    const el = this._targetEl || e.target;
+                    this.capturedHtml = el.outerHTML;
+                    this.capturedXPath = this.getXPath(el);
                     this.capturedHtmlPreview = this.capturedHtml.substring(0, 200) + (this.capturedHtml.length > 200 ? '...' : '');
                     this.componentName = '';
                     this.error = '';
@@ -196,8 +207,42 @@
                     });
                 };
 
+                this._onKeyDown = (e) => {
+                    if (!e.shiftKey || !this._targetEl) {
+                        return;
+                    }
+
+                    let next = null;
+
+                    if (e.key === 'ArrowUp') {
+                        next = this._targetEl.parentElement;
+                        if (next && (next === document.documentElement || next === document.body)) {
+                            next = null;
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        next = this._targetEl.firstElementChild;
+                    } else if (e.key === 'ArrowLeft') {
+                        next = this._targetEl.previousElementSibling;
+                        if (!next) {
+                            next = this._targetEl.parentElement?.lastElementChild;
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        next = this._targetEl.nextElementSibling;
+                        if (!next) {
+                            next = this._targetEl.parentElement?.firstElementChild;
+                        }
+                    }
+
+                    if (next && !next.closest('[data-orca-harpoon]')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._highlightElement(next);
+                    }
+                };
+
                 document.addEventListener('mouseover', this._onMouseOver, true);
                 document.addEventListener('click', this._onClick, true);
+                document.addEventListener('keydown', this._onKeyDown, true);
             },
 
             stopInspecting() {
@@ -208,8 +253,13 @@
                 if (this._onClick) {
                     document.removeEventListener('click', this._onClick, true);
                 }
+                if (this._onKeyDown) {
+                    document.removeEventListener('keydown', this._onKeyDown, true);
+                }
                 this._onMouseOver = null;
                 this._onClick = null;
+                this._onKeyDown = null;
+                this._targetEl = null;
                 this.overlayRect = { top: 0, left: 0, width: 0, height: 0 };
                 this.overlayLabel = '';
             },
