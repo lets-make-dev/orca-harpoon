@@ -225,25 +225,47 @@
                     return;
                 }
                 const kebab = this.componentName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-                const mod = this.$wire.sourceModule || '(unknown)';
-                const alias = mod.toLowerCase() + '-' + kebab;
+                const mod = this.$wire.sourceModule;
                 const htmlSnippet = this.capturedHtml.substring(0, 2000);
-                this.refactorPromptPreview = [
-                    `In Modules/${mod}, a section of HTML has been extracted into a new Livewire component '${alias}'.`,
-                    '',
-                    `New component view: Modules/${mod}/resources/views/livewire/${kebab}.blade.php`,
-                    '',
-                    'The extracted HTML (as rendered in the browser):',
-                    '```html',
-                    htmlSnippet,
-                    '```',
-                    '',
-                    `Find the blade view in Modules/${mod}/resources/views/ that contains the source Blade code producing this rendered HTML.`,
-                    'The source may use Blade directives (@@foreach, @@if, @{{ $var }}, etc.).',
-                    '',
-                    `Replace the matching section with: @@livewire('${alias}')`,
-                    'Preserve surrounding indentation. Only modify the source blade view, nothing else.',
-                ].join('\n');
+
+                if (mod) {
+                    const alias = mod.toLowerCase() + '-' + kebab;
+                    this.refactorPromptPreview = [
+                        `In Modules/${mod}, a section of HTML has been extracted into a new Livewire component '${alias}'.`,
+                        '',
+                        `New component view: Modules/${mod}/resources/views/livewire/${kebab}.blade.php`,
+                        '',
+                        'The extracted HTML (as rendered in the browser):',
+                        '```html',
+                        htmlSnippet,
+                        '```',
+                        '',
+                        `Find the blade view in Modules/${mod}/resources/views/ that contains the source Blade code producing this rendered HTML.`,
+                        'The source may use Blade directives (@@foreach, @@if, @{{ $var }}, etc.).',
+                        '',
+                        `Replace the matching section with: @@livewire('${alias}')`,
+                        'Preserve surrounding indentation. Only modify the source blade view, nothing else.',
+                    ].join('\n');
+                } else {
+                    const alias = 'makedev-' + kebab;
+                    this.refactorPromptPreview = [
+                        `A section of HTML has been extracted into a new app-level Livewire component '${alias}'.`,
+                        '',
+                        `New component class: app/MakeDev/Components/${this.componentName}.php`,
+                        `New component view: resources/views/makedev/components/${kebab}.blade.php`,
+                        '',
+                        'The extracted HTML (as rendered in the browser):',
+                        '```html',
+                        htmlSnippet,
+                        '```',
+                        '',
+                        'Find the blade view in resources/views/ that contains the source Blade code producing this rendered HTML.',
+                        'The source may use Blade directives (@@foreach, @@if, @{{ $var }}, etc.).',
+                        '',
+                        `Replace the matching section with: @@livewire('${alias}')`,
+                        'Preserve surrounding indentation. Only modify the source blade view, nothing else.',
+                    ].join('\n');
+                }
             },
 
             init() {

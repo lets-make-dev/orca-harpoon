@@ -25,14 +25,18 @@ class Harpoon extends Component
             return;
         }
 
-        if ($this->sourceModule === '') {
-            $this->dispatch('harpoon-error', message: 'No source module detected for this page.');
-
-            return;
-        }
-
         $className = Str::studly($componentName);
         $kebabName = Str::kebab($componentName);
+
+        if ($this->sourceModule === '') {
+            $this->harpoonAppLevel($className, $kebabName, $outerHtml);
+        } else {
+            $this->harpoonModuleLevel($className, $kebabName, $outerHtml);
+        }
+    }
+
+    private function harpoonModuleLevel(string $className, string $kebabName, string $outerHtml): void
+    {
         $alias = strtolower($this->sourceModule).'-'.$kebabName;
         $modulePath = base_path('Modules/'.$this->sourceModule);
 
@@ -59,6 +63,153 @@ class Harpoon extends Component
             'classPath' => "Modules/{$this->sourceModule}/app/Livewire/{$className}.php",
             'viewPath' => "Modules/{$this->sourceModule}/resources/views/livewire/{$kebabName}.blade.php",
             'refactorPrompt' => $refactorPrompt,
+        ]);
+    }
+
+    private function harpoonAppLevel(string $className, string $kebabName, string $outerHtml): void
+    {
+        $alias = 'makedev-'.$kebabName;
+
+        $this->createAppLivewireClass($className, $kebabName);
+        $this->createAppBladeView($kebabName, $outerHtml);
+        $this->updateAppServiceProvider($className, $alias);
+
+        $refactorPrompt = $this->buildAppRefactorPrompt($kebabName, $alias, $outerHtml);
+
+        session()->put('orca.pending_harpoon_refactor', [
+            'prompt' => $refactorPrompt,
+            'moduleInfo' => ['name' => $className],
+        ]);
+
+        $this->dispatch('harpoon-complete', [
+            'componentName' => $className,
+            'alias' => $alias,
+            'classPath' => "app/MakeDev/Components/{$className}.php",
+            'viewPath' => "resources/views/makedev/components/{$kebabName}.blade.php",
+            'refactorPrompt' => $refactorPrompt,
+        ]);
+    }
+
+    private function createAppLivewireClass(string $className, string $kebabName): void
+    {
+        $content = <<<PHP
+        <?php
+
+        namespace App\\MakeDev\\Components;
+
+        use Illuminate\\Contracts\\View\\View;
+        use MakeDev\\MakeDev\\Concerns\\TransitionFadeIn;
+        use MakeDev\\MakeDev\\Concerns\\TransitionFadeOut;
+        use MakeDev\\MakeDev\\Livewire\\MakeDevModuleComponent;
+
+        class {$className} extends MakeDevModuleComponent
+        {
+            use TransitionFadeIn, TransitionFadeOut;
+
+            public function moduleInfo(): array
+            {
+                return [
+                    'name' => '{$className}',
+                    'description' => 'Extracted app-level component.',
+                    'version' => '1.0.0',
+                    'keyFiles' => [
+                        'app/MakeDev/Components/{$className}.php',
+                        'resources/views/makedev/components/{$kebabName}.blade.php',
+                    ],
+                    'capabilities' => [],
+                    'dependencies' => [
+                        'livewire/livewire',
+                    ],
+                    'agentReadme' => \$this->loadAgentReadme(),
+                ];
+            }
+
+            public function overlayPosition(): string
+            {
+                return 'inline';
+            }
+
+            public function render(): View
+            {
+                return view('makedev.components.{$kebabName}');
+            }
+        }
+        PHP;
+
+        $classDir = base_path('app/MakeDev/Components');
+        File::ensureDirectoryExists($classDir);
+        File::put($classDir.'/'.$className.'.php', $content);
+    }
+
+    private function createAppBladeView(string $kebabName, string $outerHtml): void
+    {
+        $viewDir = resource_path('views/makedev/components');
+        File::ensureDirectoryExists($viewDir);
+        File::put($viewDir.'/'.$kebabName.'.blade.php', $outerHtml."\n");
+    }
+
+    private function updateAppServiceProvider(string $className, string $alias): void
+    {
+        $providerPath = base_path('app/Providers/AppServiceProvider.php');
+
+        if (! File::exists($providerPath)) {
+            return;
+        }
+
+        $contents = File::get($providerPath);
+
+        $livewireUse = 'use Livewire\Livewire;';
+        if (! str_contains($contents, $livewireUse)) {
+            $contents = preg_replace(
+                '/(use Illuminate\\\\Support\\\\ServiceProvider;)/',
+                "$1\n{$livewireUse}",
+                $contents,
+                1
+            );
+        }
+
+        $componentUse = "use App\\MakeDev\\Components\\{$className};";
+        if (! str_contains($contents, $componentUse)) {
+            $contents = preg_replace(
+                '/(use Livewire\\\\Livewire;)/',
+                "$1\n{$componentUse}",
+                $contents,
+                1
+            );
+        }
+
+        $registration = "        Livewire::component('{$alias}', {$className}::class);";
+
+        if (! str_contains($contents, $registration)) {
+            $contents = preg_replace(
+                '/(public function boot\(\): void\s*\{)/',
+                "$1\n{$registration}",
+                $contents,
+                1
+            );
+        }
+
+        File::put($providerPath, $contents);
+    }
+
+    private function buildAppRefactorPrompt(string $kebabName, string $alias, string $outerHtml): string
+    {
+        return implode("\n", [
+            "A section of HTML has been extracted into a new app-level Livewire component '{$alias}'.",
+            '',
+            "New component class: app/MakeDev/Components/".Str::studly($kebabName).".php",
+            "New component view: resources/views/makedev/components/{$kebabName}.blade.php",
+            '',
+            'The extracted HTML (as rendered in the browser):',
+            '```html',
+            Str::limit($outerHtml, 2000),
+            '```',
+            '',
+            'Find the blade view in resources/views/ that contains the source Blade code producing this rendered HTML.',
+            'The source may use Blade directives (@foreach, @if, {{ $var }}, etc.).',
+            '',
+            "Replace the matching section with: @livewire('{$alias}')",
+            'Preserve surrounding indentation. Only modify the source blade view, nothing else.',
         ]);
     }
 
